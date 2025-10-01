@@ -15,19 +15,27 @@ class Generator
 
         int rows;
         int cols;
+        bool done;
 
         std::vector<std::vector<bool>> visited;
+        std::vector<std::pair<int,int>> stack;
 
         std::mt19937 rng; 
 
-    public:
-        
-        Generator(Grid& grid);
-        void DFS(int current_row, int current_col);
-
         std::vector<std::pair<int,int>> Get_Unvisited_Neighbors(int row, int col);
+        void Remove_Wall_Step(int r1, int c1, int r2, int c2);
 
-        void Remove_Wall(Wall& current, Wall& neighbor, int dRow, int dCol);
+        void Reset(int start_row, int start_col);
+
+    public:
+    
+        Generator(Grid& grid, int start_row = 0, int start_col = 0);
+        
+        bool Is_Done();
+        std::pair<int,int> GetCurrent() const;
+
+        
+        void Step();
 
         void Save_Maze(Grid& grid, const std::string& filename);
         void Load_Maze(Grid& grid, const std::string& filename);

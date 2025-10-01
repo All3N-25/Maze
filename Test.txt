@@ -1,0 +1,452 @@
+Grid.hpp:
+#pragma once
+#include <vector>
+#include <SFML/Graphics.hpp>
+#include "Wall.hpp"
+
+class Grid
+{
+    protected:
+        std::vector <std::vector<Wall>> grid;
+
+        int rows;
+        int collumns;
+        int size;
+
+        void Initialize();
+        void Initialize_Walls(int row, int col);
+        
+    public:
+
+        Grid(int width, int height, int size);
+        void Draw(sf::RenderWindow& window);
+
+        int getRows();
+        int getCollumns();
+
+        Wall& getCell(int row, int col);
+};
+
+
+Grid.cpp:
+#include "../Headers/Grid.hpp"
+#include "../Headers/Wall.hpp"
+
+Grid::Grid(int rows, int collumns, int size)
+{
+    this->rows = rows;
+    this->collumns = collumns;
+    this->size = size;
+
+    Initialize();
+}
+
+void Grid::Initialize()
+{
+    grid.resize(rows, std::vector<Wall>(collumns, Wall(0,0,size,false,false,false,false)));
+
+    for (int r = 0; r < rows; r++)
+    {
+        for (int c = 0; c < collumns; c++)
+        {
+            // At the start, every cell has all four walls
+            grid[r][c] = Wall(r, c, size, true, true, true, true);
+        }
+    }
+}
+
+void Grid::Draw(sf::RenderWindow& window)
+{
+    for (int r = 0; r < rows; r++)
+    {
+        for (int c = 0; c < collumns; c++)
+        {
+            grid[r][c].Draw_Wall_Step(window);
+        }
+    }
+}
+
+int Grid::getRows()
+{
+    return rows;
+}
+
+int Grid::getCollumns()
+{
+    return collumns;
+}
+
+Wall& Grid::getCell(int row, int col) 
+{ 
+    return grid[row][col]; 
+}
+
+Wall.hpp:
+#pragma once
+#include <SFML/Graphics.hpp>
+
+class Wall
+{
+    private:
+        bool top, left, bot, right;
+        int row, col, size;
+
+        sf::RectangleShape top_wall;
+        sf::RectangleShape left_wall;
+        sf::RectangleShape bot_wall;
+        sf::RectangleShape right_wall;
+
+    public:
+
+        Wall(int row, int col, int size, bool top, bool left, bool bot, bool right);
+
+        void Draw_Wall_Step(sf::RenderWindow& window);
+
+        void Set_Top(bool value);
+        void Set_Left(bool value);
+        void Set_Bot(bool value);
+        void Set_Right(bool value);
+
+        bool Get_Top();
+        bool Get_Left();
+        bool Get_Bot();
+        bool Get_Right();
+};
+
+Wall.cpp:
+#include "../Headers/Wall.hpp"
+
+
+Wall::Wall(int row, int col, int size, bool top, bool left, bool bot, bool right)
+    : row(row), col(col), size(size), top(top), left(left), bot(bot), right(right)
+{
+
+}
+
+void Wall::Draw_Wall_Step(sf::RenderWindow& window)
+{
+    // recompute geometry every frame (cheap)
+    top_wall.setSize(sf::Vector2f((float)size, 2.f));
+    top_wall.setPosition((float)(col * size), (float)(row * size));
+    top_wall.setFillColor(sf::Color::White);
+
+    left_wall.setSize(sf::Vector2f(2.f, (float)size));
+    left_wall.setPosition((float)(col * size), (float)(row * size));
+    left_wall.setFillColor(sf::Color::White);
+
+    bot_wall.setSize(sf::Vector2f((float)size, 2.f));
+    bot_wall.setPosition((float)(col * size), (float)((row + 1) * size));
+    bot_wall.setFillColor(sf::Color::White);
+
+    right_wall.setSize(sf::Vector2f(2.f, (float)size));
+    right_wall.setPosition((float)((col + 1) * size), (float)(row * size));
+    right_wall.setFillColor(sf::Color::White);
+
+    if (top)  window.draw(top_wall);
+    if (left) window.draw(left_wall);
+    if (bot)  window.draw(bot_wall);
+    if (right)window.draw(right_wall);
+}
+
+void Wall::Set_Top(bool value)
+{
+    top = value;
+}
+
+void Wall::Set_Left(bool value)
+{
+    left = value;
+}
+
+void Wall::Set_Bot(bool value)
+{
+    bot = value;
+}
+
+void Wall::Set_Right(bool value)
+{
+    right = value;
+}
+
+bool Wall::Get_Top()
+{
+    return top;
+}
+bool Wall::Get_Left()
+{
+    return left;
+}
+bool Wall::Get_Bot()
+{
+    return bot;
+}
+bool Wall::Get_Right()
+{
+    return right;
+}
+
+Generator.hpp:
+#pragma once
+#include <SFML/Graphics.hpp>
+#include <vector>
+#include <random>
+#include <fstream>
+#include <iostream>
+
+#include "Grid.hpp"
+
+class Generator
+{
+    private:
+
+        Grid& grid;
+
+        int rows;
+        int cols;
+        bool done;
+
+        std::vector<std::vector<bool>> visited;
+        std::vector<std::pair<int,int>> stack;
+
+        std::mt19937 rng; 
+
+        std::vector<std::pair<int,int>> Get_Unvisited_Neighbors(int row, int col);
+        void Remove_Wall_Step(int r1, int c1, int r2, int c2);
+
+        void Reset(int start_row, int start_col);
+
+    public:
+    
+        Generator(Grid& grid, int start_row = 0, int start_col = 0);
+        
+        bool Is_Done();
+        std::pair<int,int> GetCurrent() const;
+
+        
+        void Step();
+
+        void Save_Maze(Grid& grid, const std::string& filename);
+        void Load_Maze(Grid& grid, const std::string& filename);
+};
+
+Generator.cpp:
+#include "../Headers/Generator.hpp"
+
+Generator::Generator(Grid& g, int start_row, int start_col)
+    : grid(g),
+      rows(g.getRows()),
+      cols(g.getCollumns()),
+      rng(std::random_device{}()),
+      done(false)
+{
+    Reset(start_row, start_col);
+}
+
+void Generator::Reset(int start_row, int start_col)
+{
+    visited.assign(rows, std::vector<bool>(cols, false));
+    stack.clear();
+    stack.emplace_back(start_row, start_col);
+    visited[start_row][start_col] = true;
+    done = false;
+}
+
+std::pair<int,int> Generator::GetCurrent() const
+{
+    if (stack.empty()) return {-1, -1};
+    return stack.back();
+}
+
+
+std::vector<std::pair<int,int>> Generator::Get_Unvisited_Neighbors(int row, int col)
+{
+    std::vector<std::pair<int,int>> neighbors;
+
+    if (row > 0 && !visited[row-1][col]) neighbors.push_back({row-1, col});
+    if (row < rows-1 && !visited[row+1][col]) neighbors.push_back({row+1, col});
+    if (col > 0 && !visited[row][col-1]) neighbors.push_back({row, col-1});
+    if (col < cols-1 && !visited[row][col+1]) neighbors.push_back({row, col+1});
+
+    return neighbors;
+}
+
+
+void Generator::Remove_Wall_Step(int r1, int c1, int r2, int c2)
+{
+    Wall &a = grid.getCell(r1, c1);
+    Wall &b = grid.getCell(r2, c2);
+
+    int dr = r2 - r1;
+    int dc = c2 - c1;
+
+    if (dr == -1) {          // neighbor is above
+        a.Set_Top(false);
+        b.Set_Bot(false);
+    } else if (dr == 1) {    // neighbor is below
+        a.Set_Bot(false);
+        b.Set_Top(false);
+    } else if (dc == -1) {   // neighbor is left
+        a.Set_Left(false);
+        b.Set_Right(false);
+    } else if (dc == 1) {    // neighbor is right
+        a.Set_Right(false);
+        b.Set_Left(false);
+    }
+}
+
+// STEP BY STEP
+void Generator::Step()
+{
+    if (done)
+    {
+        return;
+    }
+
+    if (stack.empty())
+    {
+        done = true;
+        return;
+    }
+
+    auto [row, col] = stack.back();
+    auto neighbors = Get_Unvisited_Neighbors(row, col);
+
+        if (!neighbors.empty())
+    {
+        // pick a random neighbor
+        std::uniform_int_distribution<int> dist(0, (int)neighbors.size() - 1);
+        auto next = neighbors[dist(rng)];
+
+        // remove the wall between current and chosen neighbor
+        Remove_Wall_Step(row, col, next.first, next.second);
+
+        // mark visited and push neighbor onto stack
+        visited[next.first][next.second] = true;
+        stack.push_back(next);
+    }
+    else
+    {
+        // backtrack
+        stack.pop_back();
+    }
+}
+
+bool Generator::Is_Done()
+{
+    return done;
+}
+
+void Generator::Save_Maze(Grid& grid, const std::string& filename) 
+{
+    std::ofstream file(filename);
+    if (!file) return;
+
+    int rows = grid.getRows();
+    int cols = grid.getCollumns();
+
+    file << rows << " " << cols << "\n";
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            Wall& w = grid.getCell(r,c);
+
+            file 
+                << w.Get_Top() << " "
+                << w.Get_Left() << " "
+                << w.Get_Bot() << " "
+                << w.Get_Right();
+
+            file << (c == cols - 1 ? '\n' : ' ');
+        }
+    }
+}
+void Generator::Load_Maze(Grid& grid, const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file) return;
+
+    int rows, cols;
+    file >> rows >> cols;
+
+    // (Optional) recreate grid if dimensions mismatch
+    if (rows != grid.getRows() || cols != grid.getCollumns()) {
+        std::cerr << "Grid size mismatch! Expected " 
+                  << grid.getRows() << "x" << grid.getCollumns() 
+                  << " but file has " << rows << "x" << cols << "\n";
+        return;
+    }
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            int t, l, b, ri;
+            file >> t >> l >> b >> ri;
+
+            Wall& w = grid.getCell(r,c);
+            w.Set_Top(t);
+            w.Set_Left(l);
+            w.Set_Bot(b);
+            w.Set_Right(ri);
+        }
+    }
+}
+
+
+
+main.cpp:
+#include <SFML/Graphics.hpp>
+#include "Headers/Grid.hpp"
+#include "Headers/Generator.hpp"
+
+int main()
+{
+    const int WINDOW_W = 602;
+    const int WINDOW_H = 602;
+
+    const int rows = 30;
+    const int cols = 30;
+    const int cellSize = 20;
+
+    sf::RenderWindow window(sf::VideoMode(WINDOW_W, WINDOW_H), "Maze (step-by-step)");
+    window.setFramerateLimit(60);
+
+    Grid grid(rows, cols, cellSize);
+    Generator gen(grid, 14, 14);
+
+    const int STEPS_PER_FRAME = 1;
+
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed
+                || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
+            {
+                window.close();
+            }
+        }
+
+        // Step by step
+        if (!gen.Is_Done())
+        {
+            for (int i = 0; i < STEPS_PER_FRAME && !gen.Is_Done(); ++i)
+                gen.Step();
+        }
+
+        window.clear(sf::Color::Black);
+        grid.Draw(window);
+
+        // highlight current cell
+        auto cur = gen.GetCurrent();
+        if (cur.first >= 0)
+        {
+            sf::RectangleShape highlight(sf::Vector2f((float)cellSize - 2.f, (float)cellSize - 2.f));
+            highlight.setPosition((float)(cur.second * cellSize + 1), (float)(cur.first * cellSize + 1));
+            highlight.setFillColor(sf::Color(100, 200, 100, 120));
+            window.draw(highlight);
+        }
+
+        window.display();
+    }
+
+    return 0;
+}

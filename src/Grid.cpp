@@ -30,7 +30,7 @@ void Grid::Draw(sf::RenderWindow& window)
     {
         for (int c = 0; c < collumns; c++)
         {
-            grid[r][c].Draw_Wall(window);
+            grid[r][c].Draw_Wall_Step(window);
         }
     }
 }

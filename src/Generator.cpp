@@ -1,39 +1,30 @@
 #include "../Headers/Generator.hpp"
 
-Generator::Generator(Grid& grid) 
-:  grid(grid), rows(grid.getRows()), cols(grid.getCollumns()) 
+Generator::Generator(Grid& g, int start_row, int start_col)
+    : grid(g),
+      rows(g.getRows()),
+      cols(g.getCollumns()),
+      rng(std::random_device{}()),
+      done(false)
 {
-        visited.assign(rows, std::vector<bool>(cols, false));
-
-        std::random_device rd;
-        rng.seed(rd());
-};
-
-void Generator::DFS(int current_row, int current_col)
-{
-    visited[current_row][current_col] = true;
-
-    std::vector<std::pair<int, int>> neighbors = Get_Unvisited_Neighbors(current_row, current_col);
-
-    while(!neighbors.empty())
-    {
-        //Random Number
-        std::uniform_int_distribution<int> dist(0, neighbors.size() - 1);
-        int idx = dist(rng);
-
-        auto [next_row, next_col] = neighbors[idx];
-
-        Remove_Wall (grid.getCell(current_row, current_col),
-                    grid.getCell(next_row, next_col),
-                    next_row - current_row,
-                    next_col - current_col
-                    );
-        
-        DFS(next_row, next_col);
-
-        neighbors = Get_Unvisited_Neighbors(current_row, current_col);
-    }
+    Reset(start_row, start_col);
 }
+
+void Generator::Reset(int start_row, int start_col)
+{
+    visited.assign(rows, std::vector<bool>(cols, false));
+    stack.clear();
+    stack.emplace_back(start_row, start_col);
+    visited[start_row][start_col] = true;
+    done = false;
+}
+
+std::pair<int,int> Generator::GetCurrent() const
+{
+    if (stack.empty()) return {-1, -1};
+    return stack.back();
+}
+
 
 std::vector<std::pair<int,int>> Generator::Get_Unvisited_Neighbors(int row, int col)
 {
@@ -47,24 +38,70 @@ std::vector<std::pair<int,int>> Generator::Get_Unvisited_Neighbors(int row, int 
     return neighbors;
 }
 
-void Generator::Remove_Wall(Wall& current, Wall& neighbor, int dRow, int dCol)
+
+void Generator::Remove_Wall_Step(int r1, int c1, int r2, int c2)
 {
-    if (dRow == -1) { // neighbor is above
-        current.Set_Top(false);
-        neighbor.Set_Bot(false);
+    Wall &a = grid.getCell(r1, c1);
+    Wall &b = grid.getCell(r2, c2);
+
+    int dr = r2 - r1;
+    int dc = c2 - c1;
+
+    if (dr == -1) {          // neighbor is above
+        a.Set_Top(false);
+        b.Set_Bot(false);
+    } else if (dr == 1) {    // neighbor is below
+        a.Set_Bot(false);
+        b.Set_Top(false);
+    } else if (dc == -1) {   // neighbor is left
+        a.Set_Left(false);
+        b.Set_Right(false);
+    } else if (dc == 1) {    // neighbor is right
+        a.Set_Right(false);
+        b.Set_Left(false);
     }
-    else if (dRow == 1) { // neighbor is below
-        current.Set_Bot(false);
-        neighbor.Set_Top(false);
+}
+
+// STEP BY STEP
+void Generator::Step()
+{
+    if (done)
+    {
+        return;
     }
-    else if (dCol == -1) { // neighbor is left
-        current.Set_Left(false);
-        neighbor.Set_Right(false);
+
+    if (stack.empty())
+    {
+        done = true;
+        return;
     }
-    else if (dCol == 1) { // neighbor is right
-        current.Set_Right(false);
-        neighbor.Set_Left(false);
+
+    auto [row, col] = stack.back();
+    auto neighbors = Get_Unvisited_Neighbors(row, col);
+
+        if (!neighbors.empty())
+    {
+        // pick a random neighbor
+        std::uniform_int_distribution<int> dist(0, (int)neighbors.size() - 1);
+        auto next = neighbors[dist(rng)];
+
+        // remove the wall between current and chosen neighbor
+        Remove_Wall_Step(row, col, next.first, next.second);
+
+        // mark visited and push neighbor onto stack
+        visited[next.first][next.second] = true;
+        stack.push_back(next);
     }
+    else
+    {
+        // backtrack
+        stack.pop_back();
+    }
+}
+
+bool Generator::Is_Done()
+{
+    return done;
 }
 
 void Generator::Save_Maze(Grid& grid, const std::string& filename) 

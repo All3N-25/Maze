@@ -1,47 +1,58 @@
-#include <iostream>
 #include <SFML/Graphics.hpp>
 #include "Headers/Grid.hpp"
 #include "Headers/Generator.hpp"
 
-using namespace std;
-
 int main()
 {
-    uint16_t window_width = 602;
-    uint16_t window_height = 602;
+    const int WINDOW_W = 602;
+    const int WINDOW_H = 602;
 
-    uint16_t windowPosX = (2560 - window_width) / 2;
-    uint16_t windowPosY = (1440 - window_height) / 2;
+    const int rows = 30;
+    const int cols = 30;
+    const int cellSize = 20;
 
-    sf::RenderWindow window(sf::VideoMode({window_width, window_height}), "Maze", sf::Style::Default);
-
-    window.setPosition(sf::Vector2i(windowPosX, windowPosY));
+    sf::RenderWindow window(sf::VideoMode(WINDOW_W, WINDOW_H), "Maze (step-by-step)");
     window.setFramerateLimit(60);
 
-    sf::Event event;
+    Grid grid(rows, cols, cellSize);
+    Generator gen(grid, 14, 14);
 
-    Grid grid(30, 30, 20);
+    const int STEPS_PER_FRAME = 1;
 
-    Generator gen(grid);
-    gen.DFS(0,0);
-
-    while(window.isOpen())
+    while (window.isOpen())
     {
-        while(window.pollEvent(event))
+        sf::Event event;
+        while (window.pollEvent(event))
         {
-            if(event.type == event.Closed || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+            if (event.type == sf::Event::Closed
+                || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
             {
                 window.close();
             }
         }
-        
+
+        // Step by step
+        if (!gen.Is_Done())
+        {
+            for (int i = 0; i < STEPS_PER_FRAME && !gen.Is_Done(); ++i)
+                gen.Step();
+        }
+
         window.clear(sf::Color::Black);
         grid.Draw(window);
-        
+
+        // highlight current cell
+        auto cur = gen.GetCurrent();
+        if (cur.first >= 0)
+        {
+            sf::RectangleShape highlight(sf::Vector2f((float)cellSize - 2.f, (float)cellSize - 2.f));
+            highlight.setPosition((float)(cur.second * cellSize + 1), (float)(cur.first * cellSize + 1));
+            highlight.setFillColor(sf::Color(100, 200, 100, 120));
+            window.draw(highlight);
+        }
+
         window.display();
     }
-
-
 
     return 0;
 }

@@ -16,8 +16,7 @@ class Wall
 
         Wall(int row, int col, int size, bool top, bool left, bool bot, bool right);
 
-        void Initialize_Wall(int row, int col, int size, bool top, bool left, bool bot, bool right);
-        void Draw_Wall(sf::RenderWindow& window);
+        void Draw_Wall_Step(sf::RenderWindow& window);
 
         void Set_Top(bool value);
         void Set_Left(bool value);
