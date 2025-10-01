@@ -19,4 +19,9 @@ class Grid
 
         Grid(int width, int height, int size);
         void Draw(sf::RenderWindow& window);
+
+        int getRows();
+        int getCollumns();
+
+        Wall& getCell(int row, int col);
 };

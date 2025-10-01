@@ -51,3 +51,23 @@ void Wall::Draw_Wall(sf::RenderWindow& window)
     if (bot) window.draw(bot_wall);
     if (right) window.draw(right_wall);
 }
+
+void Wall::Set_Top(bool value)
+{
+    top = value;
+}
+
+void Wall::Set_Left(bool value)
+{
+    left = value;
+}
+
+void Wall::Set_Bot(bool value)
+{
+    bot = value;
+}
+
+void Wall::Set_Right(bool value)
+{
+    right = value;
+}

@@ -34,3 +34,18 @@ void Grid::Draw(sf::RenderWindow& window)
         }
     }
 }
+
+int Grid::getRows()
+{
+    return rows;
+}
+
+int Grid::getCollumns()
+{
+    return collumns;
+}
+
+Wall& Grid::getCell(int row, int col) 
+{ 
+    return grid[row][col]; 
+}

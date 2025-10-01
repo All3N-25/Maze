@@ -1,13 +1,14 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include "Headers/Grid.hpp"
+#include "Headers/Generator.hpp"
 
 using namespace std;
 
 int main()
 {
-    uint16_t window_width = 600;
-    uint16_t window_height = 600;
+    uint16_t window_width = 602;
+    uint16_t window_height = 602;
 
     uint16_t windowPosX = (2560 - window_width) / 2;
     uint16_t windowPosY = (1440 - window_height) / 2;
@@ -19,7 +20,10 @@ int main()
 
     sf::Event event;
 
-    Grid grid(20, 20, 20);
+    Grid grid(30, 30, 20);
+
+    Generator gen(grid);
+    gen.DFS(0,0);
 
     while(window.isOpen())
     {
