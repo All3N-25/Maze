@@ -2,6 +2,8 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <random>
+#include <fstream>
+#include <iostream>
 
 #include "Grid.hpp"
 
@@ -26,4 +28,7 @@ class Generator
         std::vector<std::pair<int,int>> Get_Unvisited_Neighbors(int row, int col);
 
         void Remove_Wall(Wall& current, Wall& neighbor, int dRow, int dCol);
+
+        void Save_Maze(Grid& grid, const std::string& filename);
+        void Load_Maze(Grid& grid, const std::string& filename);
 };

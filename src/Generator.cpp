@@ -66,3 +66,56 @@ void Generator::Remove_Wall(Wall& current, Wall& neighbor, int dRow, int dCol)
         neighbor.Set_Left(false);
     }
 }
+
+void Generator::Save_Maze(Grid& grid, const std::string& filename) 
+{
+    std::ofstream file(filename);
+    if (!file) return;
+
+    int rows = grid.getRows();
+    int cols = grid.getCollumns();
+
+    file << rows << " " << cols << "\n";
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            Wall& w = grid.getCell(r,c);
+
+            file 
+                << w.Get_Top() << " "
+                << w.Get_Left() << " "
+                << w.Get_Bot() << " "
+                << w.Get_Right();
+
+            file << (c == cols - 1 ? '\n' : ' ');
+        }
+    }
+}
+void Generator::Load_Maze(Grid& grid, const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file) return;
+
+    int rows, cols;
+    file >> rows >> cols;
+
+    // (Optional) recreate grid if dimensions mismatch
+    if (rows != grid.getRows() || cols != grid.getCollumns()) {
+        std::cerr << "Grid size mismatch! Expected " 
+                  << grid.getRows() << "x" << grid.getCollumns() 
+                  << " but file has " << rows << "x" << cols << "\n";
+        return;
+    }
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            int t, l, b, ri;
+            file >> t >> l >> b >> ri;
+
+            Wall& w = grid.getCell(r,c);
+            w.Set_Top(t);
+            w.Set_Left(l);
+            w.Set_Bot(b);
+            w.Set_Right(ri);
+        }
+    }
+}

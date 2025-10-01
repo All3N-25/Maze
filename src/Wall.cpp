@@ -71,3 +71,20 @@ void Wall::Set_Right(bool value)
 {
     right = value;
 }
+
+bool Wall::Get_Top()
+{
+    return top;
+}
+bool Wall::Get_Left()
+{
+    return left;
+}
+bool Wall::Get_Bot()
+{
+    return bot;
+}
+bool Wall::Get_Right()
+{
+    return right;
+}

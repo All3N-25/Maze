@@ -23,4 +23,9 @@ class Wall
         void Set_Left(bool value);
         void Set_Bot(bool value);
         void Set_Right(bool value);
+
+        bool Get_Top();
+        bool Get_Left();
+        bool Get_Bot();
+        bool Get_Right();
 };

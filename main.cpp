@@ -34,9 +34,9 @@ int main()
                 window.close();
             }
         }
+        
         window.clear(sf::Color::Black);
         grid.Draw(window);
-        
         
         window.display();
     }
