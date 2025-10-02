@@ -1,3 +1,0 @@
-/home/allen/Dev/C++/Maze/build/CMakeFiles/main.dir
-/home/allen/Dev/C++/Maze/build/CMakeFiles/edit_cache.dir
-/home/allen/Dev/C++/Maze/build/CMakeFiles/rebuild_cache.dir

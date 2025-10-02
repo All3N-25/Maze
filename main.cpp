@@ -17,7 +17,7 @@ int main()
     Grid grid(rows, cols, cellSize);
     Generator gen(grid, 14, 14);
 
-    const int STEPS_PER_FRAME = 1;
+    const int STEPS_PER_FRAME = 5;
 
     while (window.isOpen())
     {
